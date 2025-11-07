@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teste Firebase</title>
+</head>
+<body>
+  <h2>Teste de Conexão</h2>
+  <p id="status">Aguarde...</p>
+
+  <script type="module">
+    window.addEventListener('error', (e) => {
+      document.getElementById('status').innerHTML = `<p style="color:red">ERRO: ${e.message}</p>`;
+    });
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+    const status = document.getElementById('status');
+
+    try {
+      // CONFIGURAÇÃO COMPLETA COM apiKey
+      const app = initializeApp({
+        apiKey: "AIzaSyD4O3WY5gN83r4fmQOa86p8OIOseRS7OQo",
+        authDomain: "form-joia.firebaseapp.com",
+        projectId: "form-joia",
+        storageBucket: "form-joia.firebasestorage.app",
+        messagingSenderId: "146556614859",
+        appId: "1:146556614859:web:64a96439e441d5fdac834e"
+      });
+
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+
+      status.innerHTML = "Fazendo login anônimo...";
+
+      signInAnonymously(auth)
+        .then(() => {
+          status.innerHTML = "Login OK! Salvando...";
+          return addDoc(collection(db, "teste"), {
+            mensagem: "Funcionou às " + new Date().toLocaleTimeString('pt-BR'),
+            usuario: auth.currentUser.uid
+          });
+        })
+        .then((doc) => {
+          document.body.innerHTML = `
+            <h2 style="color:green">SUCESSO TOTAL!</h2>
+            <p>ID: <strong>${doc.id}</strong></p>
+            <p>Firebase conectado!</p>
+            <p><a href="https://console.firebase.google.com" target="_blank">Ver no Firebase</a></p>
+          `;
+        })
+        .catch((err) => {
+          status.innerHTML = `<p style="color:red">ERRO: ${err.message}</p>`;
+        });
+
+    } catch (err) {
+      status.innerHTML = `<p style="color:red">ERRO: ${err.message}</p>`;
+    }
+  </script>
+</body>
+</html>
