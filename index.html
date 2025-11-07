@@ -29,10 +29,8 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Login anônimo
     signInAnonymously(auth).catch(() => {});
 
-    // Exportar para uso global
     window.db = db;
     window.collection = collection;
     window.addDoc = addDoc;
@@ -42,7 +40,6 @@
     window.doc = doc;
     window.onSnapshot = onSnapshot;
 
-    // Fallback IndexedDB
     window.useIndexedDB = false;
 </script>
 
@@ -114,15 +111,13 @@ checkPassword();
 </script>
 
 <div class="container">
-    <!-- LOGO NO TOPO DA PÁGINA -->
     <div id="app-header" style="text-align:center; margin-bottom: 20px; display:none;">
         <img id="logo-top" src="" alt="PrimeGems Logo" style="height: 50px; max-width: 100%; object-fit: contain;">
-        <div id="wave-separator" style="height: 12px; margin: 8px auto 0; width: 80%; background: linear-gradient(to right, transparent, #03ADD4, transparent); background-size: 100% 100%;"></div>
+        <div id="wave-separator" style="height: 12px; margin: 8px auto 0; width: 80%; background: linear-gradient(to right, transparent, #03ADD4, transparent);"></div>
     </div>
 
     <div id="loading-message">Carregando banco de dados...</div>
 
-    <!-- Página Principal -->
     <div id="main-page" style="display:none;">
         <div class="header-main-page">
             <div class="filter-group">
@@ -151,26 +146,18 @@ checkPassword();
         <div id="empty-message" style="text-align:center;padding:30px;color:#6c757d;font-style:italic;display:none;">Nenhum cadastro</div>
     </div>
 
-    <!-- Detalhes -->
     <div id="details-page" style="display:none;">
         <button class="btn-back" onclick="switchPage('main-page')"><i class="fas fa-arrow-left"></i> Voltar</button>
         <h2>Detalhes da Joia</h2>
         <div id="details-content"></div> 
     </div>
 
-    <!-- Formulário de Cadastro -->
     <div id="form-page" style="display:none;">
         <button class="btn-back" onclick="switchPage('main-page')"><i class="fas fa-arrow-left"></i> Voltar</button>
         <form id="jewel-form" onsubmit="handleFormSubmit(event)">
             <div><label>Cliente</label><input id="cliente" required></div>
-            <div>
-                <label>CPF</label>
-                <input id="cpf" placeholder="000.000.000-00" oninput="formatCPF(this)" maxlength="14" required>
-            </div>
-            <div>
-                <label>Endereço</label>
-                <input id="endereco" placeholder="Rua, número, bairro, cidade - PI" required>
-            </div>
+            <div><label>CPF</label><input id="cpf" placeholder="000.000.000-00" oninput="formatCPF(this)" maxlength="14" required></div>
+            <div><label>Endereço</label><input id="endereco" placeholder="Rua, número, bairro, cidade - PI" required></div>
             <div><label>Descrição</label><textarea id="descricao" rows="4"></textarea></div>
             <div class="row">
                 <div><label>Tipo</label><input id="tipo"></div>
@@ -203,18 +190,9 @@ checkPassword();
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<script type="module">
+<script>
 // === LOGO EM BASE64 (COLE AQUI SUA LOGO) ===
 const LOGO_BASE64 = ""
-
-// === CARREGAR LOGO NO TOPO DA PÁGINA ===
-function loadLogoOnPage() {
-    if (LOGO_BASE64) {
-        const logoImg = document.getElementById('logo-top');
-        logoImg.src = `data:image/png;base64,${LOGO_BASE64}`;
-        document.getElementById('app-header').style.display = 'block';
-    }
-}
 
 // === IndexedDB (FALLBACK) ===
 let indexedDBInstance;
@@ -246,8 +224,12 @@ async function getAllJewels() {
             request.onerror = () => reject(request.error);
         });
     } else {
-        const snapshot = await getDocs(collection(db, "jewels"));
-        return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        try {
+            const snapshot = await getDocs(collection(db, "jewels"));
+            return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (e) {
+            throw e;
+        }
     }
 }
 
@@ -381,16 +363,16 @@ function renderJewelsFiltered(filtered) {
 function viewJewel(id){
     const j = jewels.find(x => x.id === id);
     const imageHtml = j.imagem ? `<div class="detail-item detail-image-full"><img src="${j.imagem}"></div>` : '';
-    const descriptionHtml = j.descricao ? `<div class="detail-item detail-description"><strong><i class="fas fa-file-alt"></i> Descrição</strong><div class="detail-value">${j.descricao}</div></div>` : '';
+    const descriptionHtml = j.descricao ? `<div class="detail-item detail-description"><strong>Descrição</strong><div class="detail-value">${j.descricao}</div></div>` : '';
     document.getElementById('details-content').innerHTML = `
-    <div class="detail-item"><strong><i class="fas fa-user-tag"></i> Cliente</strong><div class="detail-value">${j.cliente}</div></div>
-    <div class="detail-item"><strong><i class="fas fa-id-card"></i> CPF</strong><div class="detail-value">${j.cpf}</div></div>
-    <div class="detail-item"><strong><i class="fas fa-home"></i> Endereço</strong><div class="detail-value">${j.endereco}</div></div>
-    <div class="detail-item"><strong><i class="fas fa-gem"></i> Tipo</strong><div class="detail-value">${j.tipo}</div></div>
-    <div class="detail-item"><strong><i class="fas fa-ring"></i> Material</strong><div class="detail-value">${j.material}</div></div>
-    <div class="detail-item"><strong><i class="fas fa-weight-hanging"></i> Peso</strong><div class="detail-value">${j.pesoFormatado}</div></div>
-    <div class="detail-item"><strong><i class="fas fa-dollar-sign"></i> Valor</strong><div class="detail-value">${j.valorFormatado}</div></div>
-    <div class="detail-item"><strong><i class="fas fa-calendar-alt"></i> Data</strong><div class="detail-value">${formatDateBR(j.data)}</div></div>
+    <div class="detail-item"><strong>Cliente</strong><div class="detail-value">${j.cliente}</div></div>
+    <div class="detail-item"><strong>CPF</strong><div class="detail-value">${j.cpf}</div></div>
+    <div class="detail-item"><strong>Endereço</strong><div class="detail-value">${j.endereco}</div></div>
+    <div class="detail-item"><strong>Tipo</strong><div class="detail-value">${j.tipo}</div></div>
+    <div class="detail-item"><strong>Material</strong><div class="detail-value">${j.material}</div></div>
+    <div class="detail-item"><strong>Peso</strong><div class="detail-value">${j.pesoFormatado}</div></div>
+    <div class="detail-item"><strong>Valor</strong><div class="detail-value">${j.valorFormatado}</div></div>
+    <div class="detail-item"><strong>Data</strong><div class="detail-value">${formatDateBR(j.data)}</div></div>
     ${descriptionHtml}${imageHtml}`;
     switchPage('details-page');
 }
@@ -420,7 +402,6 @@ async function deleteJewelDB(id){
     await loadJewels();
 }
 
-// === CONTRATO EM 1 PÁGINA ===
 function downloadContrato(id) {
     const j = jewels.find(x => x.id === id);
     const { jsPDF } = window.jspdf;
@@ -428,7 +409,6 @@ function downloadContrato(id) {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 14;
-    const contentWidth = pageWidth - 2 * margin;
     let y = 10;
 
     if (LOGO_BASE64) {
@@ -442,7 +422,6 @@ function downloadContrato(id) {
             y += h + 4;
             drawWave();
         };
-        img.onerror = () => drawWave();
         img.src = `data:image/png;base64,${LOGO_BASE64}`;
     } else {
         drawWave();
@@ -454,7 +433,7 @@ function downloadContrato(id) {
         doc.setLineWidth(2.5);
         let prevX = margin, prevY = waveY + 6;
         for (let i = 1; i <= 300; i++) {
-            const x = margin + (i / 300) * contentWidth;
+            const x = margin + (i / 300) * (pageWidth - 2 * margin);
             const yPos = waveY + 6 + Math.sin(i / 300 * Math.PI * 4) * 3;
             doc.line(prevX, prevY, x, yPos);
             prevX = x;
@@ -489,7 +468,7 @@ function downloadContrato(id) {
         ];
         paragrafos.forEach(par => {
             if (par === "") { y += 4; return; }
-            const lines = doc.splitTextToSize(par, contentWidth);
+            const lines = doc.splitTextToSize(par, pageWidth - 2 * margin);
             doc.text(lines, margin, y);
             y += lines.length * 4.2;
         });
@@ -511,7 +490,7 @@ function downloadContrato(id) {
         y += 6;
         doc.setFontSize(8.8);
         const fraseFinal = `Por fim, declaro a transferência integral dos direitos, posse e uso dos bens descritos na referida nota para a Prime Gems LTDA.`;
-        doc.text(doc.splitTextToSize(fraseFinal, contentWidth), margin, y);
+        doc.text(doc.splitTextToSize(fraseFinal, pageWidth - 2 * margin), margin, y);
         y += 20;
         doc.setFontSize(8.5);
         doc.text("Assinatura cliente: ______________________________________", margin, y);
@@ -541,10 +520,10 @@ function downloadAllPDF() {
     doc.setFontSize(18);
     doc.text("Lista de Joias", 105, 20, { align: "center" });
     let y = 30;
-    jewels.forEach(jewel => {
+    jewels.forEach(j => {
         if (y > 270) { doc.addPage(); y = 20; }
         doc.setFontSize(10);
-        doc.text(`${jewel.cliente} | ${jewel.cpf} | ${jewel.tipo} | R$ ${jewel.valorFormatado}`, 10, y);
+        doc.text(`${j.cliente} | ${j.cpf} | ${j.tipo} | R$ ${j.valorFormatado}`, 10, y);
         y += 7;
     });
     doc.save("lista_joias.pdf");
@@ -554,11 +533,10 @@ async function exportData() {
     await loadJewels();
     const dataStr = JSON.stringify(jewels, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `backup_${new Date().toISOString().slice(0,10)}.json`;
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', `backup_${new Date().toISOString().slice(0,10)}.json`);
+    link.click();
 }
 
 function importData() {
@@ -660,13 +638,20 @@ function formatInput(input, p){
     input.setSelectionRange(start+d, start+d);
 }
 
-// === FUNÇÃO switchPage FORA DO MODULE (CORRIGIDA) ===
 function switchPage(p){
     ['main-page','form-page','details-page'].forEach(id => {
         document.getElementById(id).style.display = 'none';
     });
     document.getElementById(p).style.display = 'block';
     if (p === 'main-page') filterJewels();
+}
+
+function loadLogoOnPage() {
+    if (LOGO_BASE64) {
+        const logoImg = document.getElementById('logo-top');
+        logoImg.src = `data:image/png;base64,${LOGO_BASE64}`;
+        document.getElementById('app-header').style.display = 'block';
+    }
 }
 
 // === INICIALIZAÇÃO ===
