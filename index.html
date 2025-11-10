@@ -328,6 +328,17 @@ function downloadContrato(id) {
     const contentWidth = pageWidth - 2 * margin;
     let y = 10;
 
+    // === DATA E HORA ATUAL (BRASIL) ===
+    const agora = new Date();
+    const dia = agora.getDate().toString().padStart(2, '0');
+    const mes = agora.toLocaleString('pt-BR', { month: 'long' });
+    const ano = agora.getFullYear();
+    const hora = agora.getHours().toString().padStart(2, '0');
+    const minuto = agora.getMinutes().toString().padStart(2, '0');
+    const segundo = agora.getSeconds().toString().padStart(2, '0');
+
+    const dataHoraExtenso = `${dia} de ${mes} de ${ano} às ${hora}:${minuto}:${segundo}`;
+
     // === LOGO ===
     if (LOGO_BASE64) {
         const img = new Image();
@@ -361,14 +372,14 @@ function downloadContrato(id) {
         doc.text("FORMULÁRIO DE REGISTRO DE JOIA", pageWidth / 2, y, { align: "center" });
         y += 12;
 
-        // DADOS DO CLIENTE
+        // DADOS DO CLIENTE (COM DATA E HORA ATUAL)
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9.5);
         const dados = [
             `Cliente: ${j.cliente}`,
             `CPF: ${j.cpf}`,
             `Endereço: ${j.endereco}`,
-            `Data: ${formatDateExtenso(j.data)}`
+            `Data: ${dataHoraExtenso}`  // ← AQUI: DATA + HORA EXATA!
         ];
         dados.forEach(l => { doc.text(l, margin, y); y += 4.6; });
         y += 6;
@@ -387,7 +398,7 @@ function downloadContrato(id) {
             y += linhas.length * 4.2;
         });
 
-        // === TABELA DE AVALIAÇÃO (DESCRIÇÃO MENOR) ===
+        // === TABELA DE AVALIAÇÃO ===
         y += 8;
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10.5);
@@ -442,7 +453,7 @@ function downloadContrato(id) {
             if (isDescricao) {
                 const maxTextWidth = col2Width - 6;
                 const linhasDesc = doc.splitTextToSize(valor, maxTextWidth);
-                const minLinhas = 3;  // ← MENOR (era 4)
+                const minLinhas = 3;
                 const linhasUsadas = Math.max(minLinhas, linhasDesc.length);
                 const cellHeight = linhasUsadas * rowHeight;
 
@@ -481,7 +492,7 @@ function downloadContrato(id) {
         doc.line(margin + 28, y, margin + 28 + 120, y);
         y += 18;
 
-        // === IMAGEM MUITO MAIOR (até 140mm de largura!) ===
+        // === IMAGEM MUITO MAIOR ===
         const margemInferior = 18;
         const espacoDisponivel = pageHeight - y - margemInferior;
 
@@ -489,30 +500,24 @@ function downloadContrato(id) {
             const img = new Image();
             img.onload = function () {
                 let w = this.width, h = this.height;
+                const maxW = 140;
 
-                // LARGURA MÁXIMA MUITO MAIOR
-                const maxW = 140;  // ← AUMENTOU MUITO!
-
-                // Primeiro ajusta pela largura
                 if (w > maxW) {
                     h = (maxW * h) / w;
                     w = maxW;
                 }
 
-                // Depois ajusta pela altura disponível
                 if (h > espacoDisponivel) {
                     w = (espacoDisponivel * w) / h;
                     h = espacoDisponivel;
                 }
 
-                // Mínimo razoável
                 if (h < 40) h = 40;
                 if (w < 60) w = 60;
 
                 const x = (pageWidth - w) / 2;
                 const imgY = pageHeight - h - margemInferior;
 
-                // Borda + sombra sutil
                 doc.setDrawColor(150);
                 doc.setLineWidth(0.5);
                 doc.rect(x - 2, imgY - 2, w + 4, h + 4);
@@ -522,7 +527,7 @@ function downloadContrato(id) {
 
                 doc.addImage(j.imagem, 'JPEG', x, imgY, w, h);
 
-                // Título opcional acima da imagem
+                // Título da foto
                 doc.setFontSize(9);
                 doc.setFont("helvetica", "italic");
 
