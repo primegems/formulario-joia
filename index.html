@@ -375,8 +375,7 @@ function downloadContrato(id) {
         const dados = [
             `Cliente: ${j.cliente}`,
             `CPF: ${j.cpf}`,
-            `Endereço: ${j.endereco}`,
-            `Data: ${dataHoraExtenso}`  // ← AQUI: DATA + HORA EXATA!
+            `Endereço: ${j.endereco}`
         ];
         dados.forEach(l => { doc.text(l, margin, y); y += 4.6; });
         y += 6;
@@ -470,40 +469,25 @@ function downloadContrato(id) {
 
         y = currentY;
 
-        // === FINAL DO TEXTO ===
-        y += 8;
-        doc.setFontSize(8.8);
-        const final = `Por fim, declaro a transferência integral dos direitos, posse e uso dos bens descritos na referida nota para a Prime Gems LTDA.`;
-        doc.text(doc.splitTextToSize(final, contentWidth), margin, y);
-        y += 15;
-
-        // === ASSINATURAS ===
-        doc.setFontSize(8.8);
-        doc.setFont("helvetica", "normal");
-
-        doc.text("Ass. Cliente: ", margin, y);
-        doc.line(margin + 28, y, margin + 28 + 120, y);
-        y += 9;
-
-        doc.text("Ass. Responsável: ", margin, y);
-        doc.line(margin + 28, y, margin + 28 + 120, y);
-        y += 18;
-
         // === IMAGEM MUITO MAIOR ===
         const margemInferior = 18;
-        const espacoDisponivel = pageHeight - y - margemInferior;
-
+        const alturaAssinaturas = 30; // espaço necessário para assinaturas + data
+        y += 8;
         if (j.imagem) {
             const img = new Image();
             img.onload = function () {
                 let w = this.width, h = this.height;
                 const maxW = 140;
 
+                // Ajusta largura máxima
                 if (w > maxW) {
                     h = (maxW * h) / w;
                     w = maxW;
                 }
 
+                // Ajusta altura máxima considerando assinaturas e final do texto
+                const alturaFinalTexto = 15;
+                let espacoDisponivel = pageHeight - y - margemInferior - alturaAssinaturas - alturaFinalTexto;
                 if (h > espacoDisponivel) {
                     w = (espacoDisponivel * w) / h;
                     h = espacoDisponivel;
@@ -513,7 +497,7 @@ function downloadContrato(id) {
                 if (w < 60) w = 60;
 
                 const x = (pageWidth - w) / 2;
-                const imgY = pageHeight - h - margemInferior;
+                const imgY = y;
 
                 doc.setDrawColor(150);
                 doc.setLineWidth(0.5);
@@ -524,16 +508,56 @@ function downloadContrato(id) {
 
                 doc.addImage(j.imagem, 'JPEG', x, imgY, w, h);
 
-                // Título da foto
-                doc.setFontSize(9);
-                doc.setFont("helvetica", "italic");
+                // === FINAL DO TEXTO ===
+                y = imgY + h + 8;
+                doc.setFontSize(8.8);
+                const final = `Por fim, declaro a transferência integral dos direitos, posse e uso dos bens descritos na referida nota para a Prime Gems LTDA.`;
+                doc.text(doc.splitTextToSize(final, contentWidth), margin, y);
+                y += 15;
 
-                doc.save(`contrato_${j.id}.pdf`);
+                renderSignaturesAndDate();
             };
             img.src = j.imagem;
         } else {
-            doc.save(`contrato_${j.id}.pdf`);
+            // Sem imagem, coloca o final do texto antes das assinaturas
+            doc.setFontSize(8.8);
+            const final = `Por fim, declaro a transferência integral dos direitos, posse e uso dos bens descritos na referida nota para a Prime Gems LTDA.`;
+            doc.text(doc.splitTextToSize(final, contentWidth), margin, y);
+            y += 15;
+
+            renderSignaturesAndDate();
         }
+
+        function renderSignaturesAndDate() {
+            // === ASSINATURAS ===
+            doc.setFontSize(8.8);
+            doc.setFont("helvetica", "normal");
+
+            doc.text("Ass. Cliente: ", margin, y);
+            doc.line(margin + 28, y, margin + 28 + 120, y);
+            y += 9;
+
+            doc.text("Ass. Responsável: ", margin, y);
+            doc.line(margin + 28, y, margin + 28 + 120, y);
+            y += 12;
+
+            // === DATA FINAL ===
+            const agora = new Date();
+            const dia = agora.getDate().toString().padStart(2, '0');
+            const mes = agora.toLocaleString('pt-BR', { month: 'long' });
+            const ano = agora.getFullYear();
+            const hora = agora.getHours().toString().padStart(2, '0');
+            const minuto = agora.getMinutes().toString().padStart(2, '0');
+            const segundo = agora.getSeconds().toString().padStart(2, '0');
+            const dataHoraExtenso = `${dia} de ${mes} de ${ano} às ${hora}:${minuto}:${segundo}`;
+
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8.5);
+            doc.text(`Data: Teresina, ${dataHoraExtenso}`, margin, y + 4);
+
+            // Salvar PDF
+            doc.save(`contrato_${j.id}.pdf`);
+        } 
     }
 }
 
